@@ -1,0 +1,264 @@
+PDR: CLAWDBOT Gateway Dashboard (White / Red / Edgy)
+Target: Replit-hosted web app. Single-page, client-heavy, minimal backend. This is a product design + engineering brief, not marketing copy.
+
+1. Product Intent
+
+Build a command-center dashboard for agent orchestration that feels sharp, adversarial, and technical. Visual tone: clean white canvas, surgical red highlights, compressed, slightly aggressive typography. This should feel closer to a Bloomberg terminal crossed with a red-team ops console than a SaaS admin panel.
+
+Primary user: technical founder / operator supervising autonomous agents, cron jobs, and intervention channels.
+Primary value: situational awareness + fast intervention.
+
+2. Core UX Principles (Non-negotiable)
+
+White-first background
+No dark mode by default. Darkness is reserved for error states, incident mode, or focus overlays.
+
+Red as semantic signal, not decoration
+Red means one of:
+
+system attention required
+
+competitive pressure
+
+agent deviation
+
+high-signal insight
+
+Edgy text through hierarchy, not gimmicks
+Edge comes from:
+
+tight leading
+
+aggressive section labels
+
+monospace for system facts
+
+uppercase micro-labels
+
+Latency-aware UI
+Every async action shows:
+
+pending
+
+resolved
+
+failed
+No silent state transitions.
+
+3. Information Architecture
+Left Rail (Control Plane)
+
+Persistent, narrow, icon-forward.
+
+Chat
+
+Overview
+
+Channels
+
+Instances
+
+Sessions
+
+Cron Jobs
+
+Skills
+
+Nodes
+
+Config
+
+Debug
+
+Logs
+
+Behavior:
+
+Icons only by default
+
+Expand on hover
+
+Active item gets red left-border + red dot
+
+Top Bar (System Status)
+
+Right-aligned, minimal.
+
+Global Health Indicator
+● OK (green) | ● DEGRADED (amber) | ● INCIDENT (red)
+
+Active Gateway Selector
+Dropdown. Monospace. Red caret.
+
+Hard Refresh / Re-sync Icon
+Explicitly visible. No auto-magic assumption.
+
+Main Panel: Chat / Briefing Surface
+
+This is not a “chat app”. It is a live operational log with conversational override.
+
+Section Blocks (Stacked Vertically)
+
+MORNING / CURRENT BRIEF
+
+Time-stamped
+
+System-generated
+
+Weather, infra notes, external context hooks
+
+Red underline on date
+
+COMPETITOR SCAN
+
+Title in uppercase, tight tracking
+
+Bullet density high
+
+View counts, timestamps, velocity indicators
+
+Red flame icon only when momentum > threshold
+
+TRENDING SIGNALS
+
+Media mentions
+
+Platform shifts
+
+Tool releases
+
+Red used for “strategic implication” lines only
+
+AGENT OUTPUT / OVERNIGHT WORK
+
+Checkbox-confirmed tasks
+
+Each task expandable
+
+Failure auto-expands in red frame
+
+DIRECT INTERVENTION INPUT
+
+Chat input at bottom
+
+Monospace
+
+Explicit “Send” button
+
+No auto-send on Enter unless toggled
+
+4. Visual System
+Colors
+
+Background: #FFFFFF
+
+Primary text: #0A0A0A
+
+Secondary text: #4A4A4A
+
+Borders: #E5E5E5
+
+Accent Red: #C4001A
+
+Error Red: #FF0033
+
+Red usage rules:
+
+Borders, underlines, indicators
+
+Never full red backgrounds except incident mode
+
+Typography
+
+Headings: Inter or Space Grotesk, semi-bold
+
+Body: Inter, regular
+
+System/meta: JetBrains Mono or SF Mono
+
+Text style cues:
+
+Section headers: uppercase, small size, tight letter spacing
+
+Metrics: monospace, darker weight
+
+Alerts: red underline + bold, not larger font
+
+5. Interaction Model
+
+Hover reveals controls, never auto-acts
+
+Click always confirms intent visually
+
+Red indicates importance, not clickability
+
+Expand/collapse is cheap and fast, no animations over 150ms
+
+6. Technical Architecture (Replit-Friendly)
+Frontend
+
+React + Vite
+
+TailwindCSS with strict token usage
+
+No component library abstractions
+
+CSS variables for theme control
+
+Backend (Lightweight)
+
+Node.js
+
+WebSocket for live updates
+
+REST fallback for history
+
+State
+
+Local UI state: client-side
+
+Session state: server
+
+Logs append-only
+
+Replit Notes
+
+Use single repo
+
+index.html + src/
+
+WebSocket server runs in same Replit instance
+
+No external auth initially; token header stubbed
+
+7. Non-Goals (Explicitly Excluded)
+
+No onboarding flows
+
+No marketing copy
+
+No gradients
+
+No soft shadows
+
+No “friendly” empty states
+
+8. Success Criteria
+
+User can identify system health in <1 second
+
+Overnight agent work is auditable without scrolling fatigue
+
+Red never feels noisy
+
+Dashboard feels decisive, not polished
+
+9. Optional Phase-2 Extensions
+
+Incident Mode: flip to white-on-black + red dominance
+
+Diff view for agent output changes
+
+Inline “why” explanations for agent decisions
+
+Competitor velocity sparklines
