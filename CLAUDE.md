@@ -36,9 +36,14 @@ npm run db:push
 
 - **`client/`** - React frontend application
   - `src/` - Application source code
-  - `src/components/ui/` - shadcn/ui component library
-  - `src/pages/` - Page components (wouter routing)
-  - `src/lib/` - Utilities and shared code
+    - `features/` - Feature-specific components organized by domain
+      - `agent/` - Agent features (chat, security, context-modification)
+      - `dashboard/` - Dashboard views
+    - `ui/` - Reusable UI components (shadcn/ui library)
+    - `hooks/` - Custom React hooks
+    - `lib/` - Utilities and shared code
+    - `types/` - TypeScript type definitions
+    - `pages/` - Top-level route pages
 - **`server/`** - Express backend
   - `index.ts` - Main server entry point
   - `routes.ts` - API route registration (prefix all routes with `/api`)
@@ -80,8 +85,21 @@ The storage interface (`IStorage` in `server/storage.ts`) is the data access lay
 
 TypeScript path aliases configured in `tsconfig.json`:
 - `@/*` → `client/src/*`
+  - `@/features/*` → Feature components
+  - `@/ui/*` → UI components (shadcn/ui)
+  - `@/hooks/*` → Custom React hooks
+  - `@/lib/*` → Utilities
+  - `@/types/*` → Type definitions
 - `@shared/*` → `shared/*`
 - `@assets/*` → `attached_assets/*`
+
+**Import Examples:**
+```typescript
+import Chat from "@/features/agent/chat"
+import { Button } from "@/ui/button"
+import { usePulse } from "@/hooks/use-animations"
+import { cn } from "@/lib/utils"
+```
 
 ### Build Process
 

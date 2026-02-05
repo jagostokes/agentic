@@ -31,9 +31,9 @@ import {
   useBreathingGlow,
 } from "@/hooks/use-animations";
 import { createRipple, scalePop, staggerEntrance, easings, durations } from "@/lib/animations";
-import Chat from "@/components/chat";
-import Security from "@/components/security";
-import ContextModification from "@/components/context-modification";
+import Chat from "@/features/agent/chat";
+import Security from "@/features/agent/security";
+import ContextModification from "@/features/agent/context-modification";
 
 type Health = "OK" | "DEGRADED" | "INCIDENT";
 
