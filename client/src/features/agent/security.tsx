@@ -15,6 +15,15 @@ import {
   Settings,
   Sparkles,
   X,
+  List,
+  Grid3x3,
+  Plus,
+  Search,
+  File,
+  FileText,
+  Folder,
+  Trash2,
+  Edit3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createRipple, easings, durations } from "@/lib/animations";
@@ -27,6 +36,17 @@ type SecurityFeature = {
   description: string;
   enabled: boolean;
   level: "critical" | "high" | "medium";
+};
+
+type ViewMode = "list" | "box";
+
+type SecurityFile = {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  modified: string;
+  icon: React.ComponentType<{ className?: string }>;
 };
 
 // Landing page with mode selection
@@ -98,41 +118,37 @@ function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) 
             >
               {/* Icon */}
               <div className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-xl border mb-6",
-                mode.color === "emerald"
-                  ? "border-emerald-500/30 bg-emerald-500/10"
-                  : "border-[hsl(var(--primary))]/30 bg-[hsl(var(--primary))]/10"
+                "mb-4 flex h-14 w-14 items-center justify-center rounded-xl border-2 transition-all",
+                "border-[hsl(var(--primary))]/30 bg-[hsl(var(--primary))]/10",
+                "group-hover:border-[hsl(var(--primary))] group-hover:bg-[hsl(var(--primary))]/20"
               )}>
-                <Icon className={cn(
-                  "h-7 w-7",
-                  mode.color === "emerald" ? "text-emerald-500" : "text-[hsl(var(--primary))]"
-                )} strokeWidth={1.5} />
+                <Icon className="h-7 w-7 text-[hsl(var(--primary))]" strokeWidth={1.5} />
               </div>
 
               {/* Content */}
-              <h3 className="mono text-lg font-bold text-foreground mb-2">{mode.title}</h3>
-              <p className="text-[13px] text-muted-foreground leading-relaxed mb-6">
+              <h3 className="mono text-[15px] font-bold text-foreground mb-2">{mode.title}</h3>
+              <p className="text-[13px] text-muted-foreground mb-4 leading-relaxed">
                 {mode.description}
               </p>
 
-              {/* Features list */}
-              <div className="space-y-2 mb-6 w-full">
+              {/* Features */}
+              <ul className="space-y-1.5 mb-6">
                 {mode.features.map((feature) => (
-                  <div key={feature} className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" strokeWidth={2} />
-                    <span className="text-[12px] text-muted-foreground">{feature}</span>
-                  </div>
+                  <li key={feature} className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2} />
+                    <span>{feature}</span>
+                  </li>
                 ))}
+              </ul>
+
+              {/* CTA */}
+              <div className="mt-auto flex items-center gap-2 text-[hsl(var(--primary))] font-medium text-[13px]">
+                <span>Select Mode</span>
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </div>
 
-              {/* Arrow indicator */}
-              <div className="flex items-center gap-2 mt-auto text-[hsl(var(--primary))] group-hover:gap-3 transition-all">
-                <span className="mono text-[12px] font-semibold">SELECT</span>
-                <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
-              </div>
-
-              {/* Hover effect background */}
-              <div className="absolute inset-0 bg-[hsl(var(--primary))]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+              {/* Hover effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--primary))]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </button>
           );
         })}
@@ -141,100 +157,336 @@ function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) 
   );
 }
 
-// Security feature toggle card
-function FeatureCard({ feature, onToggle }: { feature: SecurityFeature; onToggle: () => void }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const Icon = feature.icon;
+// File Manager for Custom Mode
+function SecurityFileManager() {
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [files, setFiles] = useState<SecurityFile[]>([
+    {
+      id: "f1",
+      name: "api-rate-limits.json",
+      type: "Rate Limiting",
+      size: "1.2 KB",
+      modified: "2 hours ago",
+      icon: Ban,
+    },
+    {
+      id: "f2",
+      name: "prompt-injection-rules.txt",
+      type: "Injection Defense",
+      size: "3.4 KB",
+      modified: "1 day ago",
+      icon: AlertTriangle,
+    },
+    {
+      id: "f3",
+      name: "environment-whitelist.conf",
+      type: "Environment Protection",
+      size: "892 B",
+      modified: "3 hours ago",
+      icon: FileKey,
+    },
+  ]);
 
-  const levelConfig = {
-    critical: { color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/30", label: "CRITICAL" },
-    high: { color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/30", label: "HIGH" },
-    medium: { color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/30", label: "MEDIUM" },
+  const handleCreateFile = () => {
+    const newFile: SecurityFile = {
+      id: `f${files.length + 1}`,
+      name: `new-security-rule-${files.length + 1}.txt`,
+      type: "Custom Rule",
+      size: "0 B",
+      modified: "Just now",
+      icon: FileText,
+    };
+    setFiles([...files, newFile]);
+    setShowCreateDialog(false);
   };
 
-  const config = levelConfig[feature.level];
+  const handleDeleteFile = (id: string) => {
+    setFiles(files.filter((f) => f.id !== id));
+  };
+
+  const filteredFiles = files.filter((file) =>
+    file.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div
-      ref={cardRef}
-      className={cn(
-        "group relative flex items-start gap-4 p-5 rounded-lg border bg-card",
-        "transition-all duration-200",
-        feature.enabled ? "border-[hsl(var(--primary))]/50 shadow-sm" : "border-border",
-        "hover:border-[hsl(var(--primary))]/50"
-      )}
-    >
-      {/* Icon */}
-      <div className={cn(
-        "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border",
-        feature.enabled ? config.border : "border-border",
-        feature.enabled ? config.bg : "bg-[hsl(var(--muted))]"
-      )}>
-        <Icon className={cn(
-          "h-6 w-6",
-          feature.enabled ? config.color : "text-muted-foreground"
-        )} strokeWidth={1.5} />
-      </div>
+    <div className="flex flex-col h-full">
+      {/* Toolbar */}
+      <div className="border-b border-border px-6 py-4 bg-background">
+        <div className="flex items-center justify-between max-w-[1400px]">
+          <div className="flex items-center gap-3">
+            {/* View toggle */}
+            <div className="flex items-center gap-1 rounded-md border border-border p-1 bg-muted/30">
+              <button
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-medium transition-all",
+                  viewMode === "list"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <List className="h-3.5 w-3.5" />
+                <span>List</span>
+              </button>
+              <button
+                onClick={() => setViewMode("box")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-medium transition-all",
+                  viewMode === "box"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Grid3x3 className="h-3.5 w-3.5" />
+                <span>Box</span>
+              </button>
+            </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div>
-            <h4 className="mono text-[14px] font-semibold text-foreground">{feature.name}</h4>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={cn("caps-label text-[9px]", config.color)}>{config.label}</span>
-              <span className="text-[10px] text-muted-foreground/60">PRIORITY</span>
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search files..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-3 py-1.5 text-[12px] rounded-md border border-border bg-background w-[200px] focus:outline-none focus:ring-1 focus:ring-primary"
+              />
             </div>
           </div>
 
-          {/* Toggle switch */}
+          {/* New file button */}
           <button
-            onClick={(e) => {
-              createRipple(e);
-              onToggle();
-            }}
-            className={cn(
-              "relative h-6 w-11 rounded-full transition-colors duration-200",
-              feature.enabled ? "bg-[hsl(var(--primary))]" : "bg-[hsl(var(--muted))]"
-            )}
-            role="switch"
-            aria-checked={feature.enabled}
+            onClick={handleCreateFile}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-[11px] font-medium hover:bg-primary/90 transition-colors"
           >
-            <div className={cn(
-              "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform duration-200 shadow-sm",
-              feature.enabled ? "translate-x-5.5" : "translate-x-0.5"
-            )} />
+            <Plus className="h-3.5 w-3.5" />
+            <span>New Security File</span>
           </button>
         </div>
+      </div>
 
-        <p className="text-[12px] text-muted-foreground leading-relaxed">
-          {feature.description}
-        </p>
+      {/* Files content */}
+      <div className="flex-1 overflow-auto p-6">
+        <div className="max-w-[1400px]">
+          {viewMode === "list" ? (
+            <div className="rounded-lg border border-border bg-background overflow-hidden">
+              <table className="w-full">
+                <thead className="border-b border-border bg-muted/30">
+                  <tr>
+                    <th className="text-left px-4 py-3 caps-label text-[10px] text-muted-foreground">
+                      NAME
+                    </th>
+                    <th className="text-left px-4 py-3 caps-label text-[10px] text-muted-foreground">
+                      TYPE
+                    </th>
+                    <th className="text-left px-4 py-3 caps-label text-[10px] text-muted-foreground">
+                      SIZE
+                    </th>
+                    <th className="text-left px-4 py-3 caps-label text-[10px] text-muted-foreground">
+                      MODIFIED
+                    </th>
+                    <th className="text-right px-4 py-3 caps-label text-[10px] text-muted-foreground">
+                      ACTIONS
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFiles.map((file) => {
+                    const Icon = file.icon;
+                    return (
+                      <tr
+                        key={file.id}
+                        className="border-b border-border hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded bg-muted/50 flex items-center justify-center">
+                              <Icon className="h-4 w-4 text-foreground" />
+                            </div>
+                            <span className="text-[13px] font-medium text-foreground">
+                              {file.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="caps-label text-[10px] text-muted-foreground">
+                            {file.type}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[12px] text-muted-foreground">
+                          {file.size}
+                        </td>
+                        <td className="px-4 py-3 text-[12px] text-muted-foreground">
+                          {file.modified}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <button className="p-1.5 rounded hover:bg-muted transition-colors">
+                              <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteFile(file.id)}
+                              className="p-1.5 rounded hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredFiles.map((file) => {
+                const Icon = file.icon;
+                return (
+                  <div
+                    key={file.id}
+                    className="group rounded-lg border border-border bg-background p-4 hover:border-primary/50 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="h-12 w-12 rounded-lg bg-muted/50 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                        <Icon className="h-6 w-6 text-foreground group-hover:text-primary transition-colors" />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button className="p-1.5 rounded hover:bg-muted transition-colors">
+                          <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFile(file.id)}
+                          className="p-1.5 rounded hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-[13px] font-medium text-foreground mb-1 truncate">
+                      {file.name}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-2">
+                      <span className="caps-label">{file.type}</span>
+                      <span>•</span>
+                      <span>{file.size}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground/70">
+                      {file.modified}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-        {/* Status indicator */}
-        <div className="flex items-center gap-2 mt-3">
-          <div className={cn(
-            "h-1.5 w-1.5 rounded-full",
-            feature.enabled ? "bg-emerald-500" : "bg-muted-foreground"
-          )} />
-          <span className="caps-label text-[10px] text-muted-foreground">
-            {feature.enabled ? "ACTIVE" : "DISABLED"}
-          </span>
+          {filteredFiles.length === 0 && (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-[13px] text-muted-foreground">No security files found</p>
+              <p className="text-[12px] text-muted-foreground/70 mt-1">
+                Create a new file to get started
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+// Feature card component
+function FeatureCard({
+  feature,
+  onToggle,
+}: {
+  feature: SecurityFeature;
+  onToggle: () => void;
+}) {
+  const Icon = feature.icon;
+
+  const levelConfig = {
+    critical: { color: "text-[hsl(var(--destructive))]", bg: "bg-[hsl(var(--destructive))]/10", label: "CRITICAL" },
+    high: { color: "text-amber-500", bg: "bg-amber-500/10", label: "HIGH" },
+    medium: { color: "text-blue-500", bg: "bg-blue-500/10", label: "MEDIUM" },
+  };
+
+  const config = levelConfig[feature.level];
+
+  return (
+    <div
+      className={cn(
+        "group relative flex flex-col rounded-lg border-2 p-5 transition-all duration-200",
+        feature.enabled
+          ? "border-[hsl(var(--primary))]/50 bg-[hsl(var(--primary))]/5"
+          : "border-border bg-card hover:border-border/60"
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-lg border transition-colors",
+            feature.enabled ? "border-[hsl(var(--primary))]/30 bg-[hsl(var(--primary))]/10" : "border-border bg-muted/30"
+          )}>
+            <Icon className={cn("h-5 w-5", feature.enabled ? "text-[hsl(var(--primary))]" : "text-muted-foreground")} strokeWidth={2} />
+          </div>
+          <div>
+            <h3 className="mono text-[13px] font-semibold text-foreground mb-0.5">{feature.name}</h3>
+            <span className={cn("caps-label text-[9px] px-1.5 py-0.5 rounded", config.bg, config.color)}>
+              {config.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Toggle */}
+        <button
+          onClick={(e) => {
+            createRipple(e);
+            onToggle();
+          }}
+          className={cn(
+            "relative h-6 w-11 rounded-full border-2 transition-colors overflow-hidden",
+            feature.enabled
+              ? "bg-[hsl(var(--primary))] border-[hsl(var(--primary))]"
+              : "bg-muted border-border"
+          )}
+        >
+          <div
+            className={cn(
+              "absolute top-[2px] h-[16px] w-[16px] rounded-full bg-white transition-all duration-200",
+              feature.enabled ? "left-[22px]" : "left-[2px]"
+            )}
+          />
+        </button>
+      </div>
+
+      {/* Description */}
+      <p className="text-[12px] text-muted-foreground leading-relaxed">
+        {feature.description}
+      </p>
+    </div>
+  );
+}
+
 // Security Assessment Panel
-function SecurityAssessment({ features, onClose }: { features: SecurityFeature[]; onClose: () => void }) {
-  const assessmentRef = useRef<HTMLDivElement>(null);
+function SecurityAssessment({
+  features,
+  onClose,
+}: {
+  features: SecurityFeature[];
+  onClose: () => void;
+}) {
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (assessmentRef.current) {
+    if (panelRef.current) {
       anime({
-        targets: assessmentRef.current,
-        height: [0, assessmentRef.current.scrollHeight],
+        targets: panelRef.current,
+        translateY: [-20, 0],
         opacity: [0, 1],
         duration: durations.normal,
         easing: easings.smooth,
@@ -242,146 +494,92 @@ function SecurityAssessment({ features, onClose }: { features: SecurityFeature[]
     }
   }, []);
 
+  const enabledCount = features.filter((f) => f.enabled).length;
   const criticalEnabled = features.filter((f) => f.level === "critical" && f.enabled).length;
-  const highEnabled = features.filter((f) => f.level === "high" && f.enabled).length;
-  const totalEnabled = features.filter((f) => f.enabled).length;
+  const criticalTotal = features.filter((f) => f.level === "critical").length;
+  const score = Math.round((enabledCount / features.length) * 100);
 
-  const score = Math.round((totalEnabled / features.length) * 100);
-  const criticalScore = features.filter((f) => f.level === "critical").length === criticalEnabled;
-  const highScore = features.filter((f) => f.level === "high").length === highEnabled;
-
-  const overallStatus = criticalScore && highScore ? "secure" : criticalScore ? "moderate" : "vulnerable";
-
-  const statusConfig = {
-    secure: { color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/50", label: "SECURE" },
-    moderate: { color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/50", label: "MODERATE RISK" },
-    vulnerable: { color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/50", label: "VULNERABLE" },
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "emerald";
+    if (score >= 50) return "amber";
+    return "red";
   };
 
-  const config = statusConfig[overallStatus];
-
-  const vulnerabilities = features.filter((f) => !f.enabled && (f.level === "critical" || f.level === "high"));
-  const recommendations = [
-    ...(!criticalScore ? ["Enable all critical security features immediately"] : []),
-    ...(!highScore ? ["Consider enabling high-priority protections"] : []),
-    ...(features.find((f) => f.id === "env" && !f.enabled) ? ["Environment file protection is disabled - credentials may be exposed"] : []),
-    ...(features.find((f) => f.id === "injection" && !f.enabled) ? ["Prompt injection defense is off - agent is vulnerable to manipulation"] : []),
-  ];
+  const color = getScoreColor(score);
 
   return (
     <div
-      ref={assessmentRef}
-      className="mb-4 max-w-[1400px] rounded-lg border-2 bg-card overflow-hidden"
-      style={{ borderColor: `hsl(var(--${overallStatus === "secure" ? "primary" : overallStatus === "moderate" ? "amber" : "destructive"}))` }}
+      ref={panelRef}
+      className="mb-6 max-w-[1400px] rounded-lg border-2 border-[hsl(var(--primary))]/30 bg-card p-6 opacity-0"
     >
-      {/* Header */}
-      <div className={cn("flex items-center justify-between p-4 border-b", config.bg)}>
-        <div className="flex items-center gap-3">
-          <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg border", config.border, config.bg)}>
-            <ShieldCheck className={cn("h-5 w-5", config.color)} strokeWidth={2} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="mono text-[14px] font-bold text-foreground">Security Assessment</h3>
-              <span className={cn("px-2 py-0.5 rounded text-[9px] mono font-semibold", config.bg, config.color)}>
-                {config.label}
-              </span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Generated {new Date().toLocaleTimeString()} • Score: {score}/100
-            </p>
-          </div>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h3 className="mono text-[15px] font-bold text-foreground mb-1">Security Assessment</h3>
+          <p className="text-[12px] text-muted-foreground">
+            Real-time analysis of your security configuration
+          </p>
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded hover:bg-[hsl(var(--muted))] transition-colors"
+          className="h-8 w-8 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center"
         >
-          <X className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+          <X className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-4">
-        {/* Score breakdown */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-3 rounded-lg border border-border bg-background">
-            <div className="flex items-center gap-2 mb-2">
-              <div className={cn("h-2 w-2 rounded-full", criticalScore ? "bg-emerald-500" : "bg-red-500")} />
-              <span className="caps-label text-[10px] text-muted-foreground">CRITICAL</span>
-            </div>
-            <div className="mono text-[18px] font-bold text-foreground">
-              {criticalEnabled}/{features.filter((f) => f.level === "critical").length}
-            </div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">
-              {criticalScore ? "All protected" : "Gaps detected"}
-            </div>
+      <div className="grid grid-cols-3 gap-6">
+        {/* Score */}
+        <div className="flex flex-col items-center p-6 rounded-lg border border-border bg-muted/30">
+          <div className={cn(
+            "text-4xl font-bold mb-2",
+            color === "emerald" && "text-emerald-500",
+            color === "amber" && "text-amber-500",
+            color === "red" && "text-[hsl(var(--destructive))]"
+          )}>
+            {score}%
           </div>
-
-          <div className="p-3 rounded-lg border border-border bg-background">
-            <div className="flex items-center gap-2 mb-2">
-              <div className={cn("h-2 w-2 rounded-full", highScore ? "bg-emerald-500" : "bg-amber-500")} />
-              <span className="caps-label text-[10px] text-muted-foreground">HIGH PRIORITY</span>
-            </div>
-            <div className="mono text-[18px] font-bold text-foreground">
-              {highEnabled}/{features.filter((f) => f.level === "high").length}
-            </div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">
-              {highScore ? "Fully enabled" : "Review needed"}
-            </div>
-          </div>
-
-          <div className="p-3 rounded-lg border border-border bg-background">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-2 w-2 rounded-full bg-blue-500" />
-              <span className="caps-label text-[10px] text-muted-foreground">OVERALL SCORE</span>
-            </div>
-            <div className="mono text-[18px] font-bold text-foreground">{score}%</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Security coverage</div>
-          </div>
+          <div className="caps-label text-[10px] text-muted-foreground">SECURITY SCORE</div>
         </div>
 
         {/* Vulnerabilities */}
-        {vulnerabilities.length > 0 && (
-          <div>
-            <h4 className="caps-label text-[11px] text-muted-foreground mb-2">ACTIVE VULNERABILITIES</h4>
-            <div className="space-y-2">
-              {vulnerabilities.map((vuln) => (
-                <div key={vuln.id} className="flex items-start gap-2 p-2 rounded border border-red-500/30 bg-red-500/5">
-                  <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" strokeWidth={2} />
-                  <div className="flex-1 min-w-0">
-                    <div className="mono text-[11px] font-semibold text-foreground">{vuln.name}</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">{vuln.description}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="flex flex-col items-center p-6 rounded-lg border border-border bg-muted/30">
+          <div className="text-4xl font-bold text-amber-500 mb-2">
+            {features.length - enabledCount}
           </div>
-        )}
+          <div className="caps-label text-[10px] text-muted-foreground">DISABLED FEATURES</div>
+        </div>
 
-        {/* Recommendations */}
-        {recommendations.length > 0 && (
-          <div>
-            <h4 className="caps-label text-[11px] text-muted-foreground mb-2">RECOMMENDATIONS</h4>
-            <div className="space-y-1.5">
-              {recommendations.map((rec, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--primary))] shrink-0 mt-1.5" />
-                  <span className="text-[11px] text-muted-foreground">{rec}</span>
-                </div>
-              ))}
-            </div>
+        {/* Critical */}
+        <div className="flex flex-col items-center p-6 rounded-lg border border-border bg-muted/30">
+          <div className={cn(
+            "text-4xl font-bold mb-2",
+            criticalEnabled === criticalTotal ? "text-emerald-500" : "text-[hsl(var(--destructive))]"
+          )}>
+            {criticalEnabled}/{criticalTotal}
           </div>
-        )}
+          <div className="caps-label text-[10px] text-muted-foreground">CRITICAL ACTIVE</div>
+        </div>
+      </div>
 
-        {/* Success message */}
-        {overallStatus === "secure" && (
-          <div className="flex items-center gap-2 p-3 rounded border border-emerald-500/30 bg-emerald-500/10">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" strokeWidth={2} />
-            <span className="text-[12px] text-muted-foreground">
-              Your agent meets all critical security requirements. Continue monitoring for emerging threats.
-            </span>
-          </div>
-        )}
+      {/* Recommendations */}
+      <div className="mt-6 p-4 rounded-lg bg-muted/30">
+        <div className="caps-label text-[10px] text-muted-foreground mb-3">RECOMMENDATIONS</div>
+        <ul className="space-y-2">
+          {features
+            .filter((f) => !f.enabled && f.level === "critical")
+            .map((f) => (
+              <li key={f.id} className="flex items-start gap-2 text-[12px] text-muted-foreground">
+                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>Enable <strong className="text-foreground">{f.name}</strong> to improve security</span>
+              </li>
+            ))}
+          {features.filter((f) => !f.enabled && f.level === "critical").length === 0 && (
+            <li className="flex items-start gap-2 text-[12px] text-emerald-500">
+              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>All critical security features are enabled</span>
+            </li>
+          )}
+        </ul>
       </div>
     </div>
   );
@@ -485,6 +683,42 @@ export default function Security() {
     return <SecurityLanding onModeSelect={handleModeSelect} />;
   }
 
+  // Custom mode shows file manager
+  if (mode === "custom") {
+    return (
+      <div ref={containerRef} className="flex flex-col h-full">
+        {/* Header */}
+        <div className="border-b border-border px-6 py-4 bg-background">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleReset}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-[hsl(var(--muted))] transition-colors"
+                title="Back to mode selection"
+              >
+                <ChevronRight className="h-4 w-4 rotate-180 text-muted-foreground" strokeWidth={2} />
+              </button>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="mono text-[16px] font-bold text-foreground">Security Configuration</h2>
+                  <span className="px-2 py-0.5 rounded-md text-[10px] mono font-semibold bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
+                    CUSTOM MODE
+                  </span>
+                </div>
+                <p className="text-[12px] text-muted-foreground mt-0.5">
+                  Manage custom security rules and configurations
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <SecurityFileManager />
+      </div>
+    );
+  }
+
+  // Base mode shows feature toggles
   const enabledCount = features.filter((f) => f.enabled).length;
   const criticalEnabled = features.filter((f) => f.level === "critical" && f.enabled).length;
   const criticalTotal = features.filter((f) => f.level === "critical").length;
@@ -505,13 +739,8 @@ export default function Security() {
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="mono text-[16px] font-bold text-foreground">Security Configuration</h2>
-                <span className={cn(
-                  "px-2 py-0.5 rounded-md text-[10px] mono font-semibold",
-                  mode === "base"
-                    ? "bg-emerald-500/10 text-emerald-500"
-                    : "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
-                )}>
-                  {mode === "base" ? "BASE MODE" : "CUSTOM MODE"}
+                <span className="px-2 py-0.5 rounded-md text-[10px] mono font-semibold bg-emerald-500/10 text-emerald-500">
+                  BASE MODE
                 </span>
               </div>
               <p className="text-[12px] text-muted-foreground mt-0.5">
@@ -591,22 +820,6 @@ export default function Security() {
           </div>
         )}
 
-        {/* Success banner if all critical enabled */}
-        {criticalEnabled === criticalTotal && (
-          <div className="mt-6 max-w-[1400px] rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-4">
-            <div className="flex items-start gap-3">
-              <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" strokeWidth={2} />
-              <div>
-                <div className="mono text-[13px] font-semibold text-emerald-500 mb-1">
-                  All Critical Features Active
-                </div>
-                <p className="text-[12px] text-muted-foreground">
-                  Your agent is protected by all essential security features. Continue to monitor and adjust settings as needed.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Footer actions */}

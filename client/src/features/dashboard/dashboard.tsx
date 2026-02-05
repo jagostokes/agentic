@@ -34,6 +34,7 @@ import { createRipple, scalePop, staggerEntrance, easings, durations } from "@/l
 import Chat from "@/features/agent/chat";
 import Security from "@/features/agent/security";
 import ContextModification from "@/features/agent/context-modification";
+import NewAgent from "@/features/agent/new-agent";
 
 type Health = "OK" | "DEGRADED" | "INCIDENT";
 
@@ -693,40 +694,27 @@ function BackgroundTasksPanel() {
   const tasks: BackgroundTask[] = [
     {
       id: "bt1",
-      name: "Data Sync",
+      name: "Dinner Reservation Valentines Day (NC Durham)",
       status: "running",
-      progress: 67,
-      startedAt: "2 min ago",
-      description: "Synchronizing data from external APIs and updating local cache. Processing 1,247 records across 3 data sources.",
+      progress: 45,
+      startedAt: "5 min ago",
+      description: "Searching for romantic restaurants in Durham, NC with availability on Valentine's Day. Comparing reviews, menus, and making reservations at top-rated locations.",
     },
     {
       id: "bt2",
-      name: "Model Training",
+      name: "Gmail Monitoring and File Sorting",
       status: "running",
-      progress: 23,
-      startedAt: "15 min ago",
-      description: "Fine-tuning agent response patterns based on recent interactions. Epoch 2/8 complete.",
+      progress: 78,
+      startedAt: "12 min ago",
+      description: "Monitoring inbox for new emails, categorizing by priority, sorting attachments into appropriate folders, and flagging important messages for review.",
     },
     {
       id: "bt3",
-      name: "Security Scan",
-      status: "completed",
+      name: "Research Paper Due Tuesday",
+      status: "running",
+      progress: 62,
       startedAt: "1 hr ago",
-      description: "Completed full security audit. No vulnerabilities detected. All endpoints verified.",
-    },
-    {
-      id: "bt4",
-      name: "Log Analysis",
-      status: "queued",
-      startedAt: "Queued",
-      description: "Waiting to analyze system logs from the past 24 hours. Will identify anomalies and patterns.",
-    },
-    {
-      id: "bt5",
-      name: "Backup",
-      status: "failed",
-      startedAt: "30 min ago",
-      description: "Backup to secondary storage failed. Error: Connection timeout. Retry scheduled.",
+      description: "Gathering research materials, analyzing academic papers, organizing notes, and preparing outline for research paper submission deadline on Tuesday.",
     },
   ];
 
@@ -755,7 +743,7 @@ function BackgroundTasksPanel() {
   return (
     <div
       ref={panelRef}
-      className="flex-1 flex flex-col bg-background rounded-lg border border-border overflow-hidden"
+      className="w-[320px] shrink-0 flex flex-col bg-background rounded-lg border border-border overflow-hidden"
       style={{ opacity: 0 }}
     >
       {/* Header */}
@@ -1290,7 +1278,9 @@ export default function Dashboard() {
           </header>
 
           <div className="flex min-h-0 flex-1 flex-col">
-            {activeNav === "agent-a" && activeSubTab === "CHAT" ? (
+            {activeNav === "new-agent" ? (
+              <NewAgent />
+            ) : activeNav === "agent-a" && activeSubTab === "CHAT" ? (
               <div className="min-h-0 flex-1 flex p-4 gap-4 bg-[hsl(var(--muted))]/30">
                 {/* Chat area */}
                 <div className="flex-[1.5] min-h-0">
@@ -1305,7 +1295,7 @@ export default function Dashboard() {
               </div>
             ) : activeNav === "agent-a" && activeSubTab === "CONTEXT MODIFICATION" ? (
               <div className="min-h-0 flex-1 bg-[hsl(var(--muted))]/30">
-                <ContextModification />
+                <ContextModification onNavigate={handleSubTabClick} />
               </div>
             ) : (
             <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
