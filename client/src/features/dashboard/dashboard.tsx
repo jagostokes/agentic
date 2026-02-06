@@ -35,6 +35,7 @@ import Chat from "@/features/agent/chat";
 import Security from "@/features/agent/security";
 import ContextModification from "@/features/agent/context-modification";
 import NewAgent from "@/features/agent/new-agent";
+import Soul from "@/features/agent/soul";
 
 type Health = "OK" | "DEGRADED" | "INCIDENT";
 
@@ -1296,6 +1297,10 @@ export default function Dashboard() {
             ) : activeNav === "agent-a" && activeSubTab === "CONTEXT MODIFICATION" ? (
               <div className="min-h-0 flex-1 bg-[hsl(var(--muted))]/30">
                 <ContextModification onNavigate={handleSubTabClick} />
+              </div>
+            ) : activeNav === "agent-a" && activeSubTab === "SOUL / PURPOSE" ? (
+              <div className="min-h-0 flex-1 flex flex-col">
+                <Soul />
               </div>
             ) : (
             <div className="min-h-0 flex-1 overflow-auto px-4 py-4">

@@ -142,6 +142,12 @@
 
   --destructive-border: hsl(var(--destructive));
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Soul diagram section colors */
+  --soul-core: 353 80% 42%;
+  --soul-boundaries: 220 60% 45%;
+  --soul-vibe: 280 50% 48%;
+  --soul-continuity: 160 45% 42%;
 }
 
 .dark {
@@ -197,6 +203,11 @@
   --shadow-lg: 0 0 #0000;
   --shadow-xl: 0 0 #0000;
   --shadow-2xl: 0 0 #0000;
+
+  --soul-core: 353 90% 55%;
+  --soul-boundaries: 220 55% 55%;
+  --soul-vibe: 280 45% 60%;
+  --soul-continuity: 160 40% 52%;
 }
 
 @layer base {
