@@ -8,25 +8,31 @@ import {
   AlertTriangle,
   RefreshCw,
   FileKey,
-  BrainCircuit,
   Ban,
   CheckCircle2,
   ChevronRight,
   Settings,
-  Sparkles,
   X,
   List,
   Grid3x3,
   Plus,
   Search,
-  File,
   FileText,
-  Folder,
   Trash2,
   Edit3,
+  Activity,
+  TrendingUp,
+  Vault,
+  Webhook,
+  Bell,
+  CircleCheck,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createRipple, easings, durations } from "@/lib/animations";
+import { Switch } from "@/ui/switch";
+import { Progress } from "@/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/ui/tabs";
 
 type SecurityMode = "base" | "custom" | null;
 type SecurityFeature = {
@@ -48,6 +54,52 @@ type SecurityFile = {
   modified: string;
   icon: React.ComponentType<{ className?: string }>;
 };
+
+// Mock data for demo sections
+type AuditEntry = { id: string; time: string; type: string; status: "success" | "failed"; detail: string };
+type PolicyRow = { id: string; name: string; status: "Active" | "Draft"; updated: string };
+type IntegrationRow = { id: string; name: string; status: "Connected" | "Not configured"; icon: React.ComponentType<{ className?: string }> };
+type AlertRow = { id: string; time: string; severity: "low" | "medium" | "high"; message: string };
+type BlockedAttempt = { id: string; type: string; time: string };
+type ActiveThreat = { id: string; severity: "low" | "medium"; message: string };
+
+const MOCK_AUDIT_ENTRIES: AuditEntry[] = [
+  { id: "a1", time: "2 min ago", type: "Prompt injection blocked", status: "success", detail: "Request #4821" },
+  { id: "a2", time: "15 min ago", type: "Config change", status: "success", detail: "Environment protection enabled" },
+  { id: "a3", time: "1 hour ago", type: "Rate limit hit", status: "success", detail: "API endpoint /v1/chat" },
+  { id: "a4", time: "2 hours ago", type: "Security scan", status: "success", detail: "Full assessment completed" },
+  { id: "a5", time: "3 hours ago", type: "Unauthorized access attempt", status: "failed", detail: "Blocked at gateway" },
+  { id: "a6", time: "5 hours ago", type: "Audit log export", status: "success", detail: "Daily export completed" },
+];
+
+const MOCK_POLICIES: PolicyRow[] = [
+  { id: "p1", name: "Rate limit policy", status: "Active", updated: "2 hours ago" },
+  { id: "p2", name: "Prompt injection rules", status: "Active", updated: "1 day ago" },
+  { id: "p3", name: "Environment whitelist", status: "Active", updated: "3 hours ago" },
+  { id: "p4", name: "Custom allowlist (draft)", status: "Draft", updated: "Just now" },
+];
+
+const MOCK_INTEGRATIONS: IntegrationRow[] = [
+  { id: "i1", name: "Secret Vault", status: "Connected", icon: Vault },
+  { id: "i2", name: "Audit log export", status: "Connected", icon: FileText },
+  { id: "i3", name: "Alert webhook", status: "Not configured", icon: Webhook },
+];
+
+const MOCK_ALERTS: AlertRow[] = [
+  { id: "al1", time: "10 min ago", severity: "low", message: "Unusual token usage detected" },
+  { id: "al2", time: "1 hour ago", severity: "medium", message: "Rate limit threshold reached" },
+  { id: "al3", time: "3 hours ago", severity: "low", message: "New device login" },
+];
+
+const MOCK_BLOCKED_ATTEMPTS: BlockedAttempt[] = [
+  { id: "b1", type: "Prompt injection", time: "2 min ago" },
+  { id: "b2", type: "Rate limit exceeded", time: "15 min ago" },
+  { id: "b3", type: "Invalid env access", time: "1 hour ago" },
+];
+
+const MOCK_ACTIVE_THREATS: ActiveThreat[] = [
+  { id: "t1", severity: "low", message: "Unusual token usage in last 24h" },
+];
 
 // Landing page with mode selection
 function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) => void }) {
@@ -85,10 +137,13 @@ function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) 
     },
   ];
 
+  const lastScanMinutes = 12;
+  const agentName = "Agent A";
+
   return (
     <div ref={containerRef} className="flex flex-col items-center justify-center min-h-full p-8">
       {/* Header */}
-      <div className="animate-card text-center mb-12 opacity-0">
+      <div className="animate-card text-center mb-8 opacity-0">
         <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-[hsl(var(--primary))]/30 bg-[hsl(var(--primary))]/10 mb-6">
           <Shield className="h-10 w-10 text-[hsl(var(--primary))]" strokeWidth={1.5} />
         </div>
@@ -96,6 +151,25 @@ function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) 
         <p className="text-[14px] text-muted-foreground max-w-[500px]">
           Choose your security approach to protect your agent from vulnerabilities and ensure safe operation
         </p>
+      </div>
+
+      {/* Overview strip */}
+      <div className="animate-card mb-8 w-full max-w-[900px] opacity-0">
+        <div className="rounded-xl border border-border bg-card px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.6)" />
+            <span className="mono text-[13px] font-medium text-foreground">All systems operational</span>
+          </div>
+          <div className="flex items-center gap-6 text-[12px] text-muted-foreground">
+            <span>Last scan: {lastScanMinutes} min ago</span>
+            <span>Agent: {agentName}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="caps-label text-[10px] text-muted-foreground px-2 py-1 rounded-md bg-muted/50">6 features</span>
+            <span className="caps-label text-[10px] text-muted-foreground px-2 py-1 rounded-md bg-muted/50">2 critical</span>
+            <span className="caps-label text-[10px] text-emerald-600 px-2 py-1 rounded-md bg-emerald-500/10">Base recommended</span>
+          </div>
+        </div>
       </div>
 
       {/* Mode cards */}
@@ -432,7 +506,7 @@ function FeatureCard({
             "flex h-10 w-10 items-center justify-center rounded-lg border transition-colors",
             feature.enabled ? "border-[hsl(var(--primary))]/30 bg-[hsl(var(--primary))]/10" : "border-border bg-muted/30"
           )}>
-            <Icon className={cn("h-5 w-5", feature.enabled ? "text-[hsl(var(--primary))]" : "text-muted-foreground")} strokeWidth={2} />
+            <Icon className={cn("h-5 w-5", feature.enabled ? "text-[hsl(var(--primary))]" : "text-muted-foreground")} />
           </div>
           <div>
             <h3 className="mono text-[13px] font-semibold text-foreground mb-0.5">{feature.name}</h3>
@@ -443,31 +517,160 @@ function FeatureCard({
         </div>
 
         {/* Toggle */}
-        <button
-          onClick={(e) => {
-            createRipple(e);
-            onToggle();
-          }}
-          className={cn(
-            "relative h-6 w-11 rounded-full border-2 transition-colors overflow-hidden",
-            feature.enabled
-              ? "bg-[hsl(var(--primary))] border-[hsl(var(--primary))]"
-              : "bg-muted border-border"
-          )}
-        >
-          <div
-            className={cn(
-              "absolute top-[2px] h-[16px] w-[16px] rounded-full bg-white transition-all duration-200",
-              feature.enabled ? "left-[22px]" : "left-[2px]"
-            )}
-          />
-        </button>
+        <Switch
+          checked={feature.enabled}
+          onCheckedChange={onToggle}
+          className="data-[state=checked]:bg-primary"
+        />
       </div>
 
       {/* Description */}
       <p className="text-[12px] text-muted-foreground leading-relaxed">
         {feature.description}
       </p>
+    </div>
+  );
+}
+
+// Threat model summary (demo)
+function ThreatSummary() {
+  const threats = [
+    { label: "Prompt injection", icon: AlertTriangle },
+    { label: "Env exposure", icon: FileKey },
+    { label: "Loops", icon: RefreshCw },
+  ];
+  return (
+    <div className="security-section opacity-0 mb-6 max-w-[1400px] rounded-lg border border-border bg-card p-4">
+      <div className="caps-label text-[10px] text-muted-foreground mb-3">THREAT MODEL</div>
+      <div className="flex flex-wrap gap-4">
+        {threats.map((t) => {
+          const Icon = t.icon;
+          return (
+            <div key={t.label} className="flex items-center gap-2 text-[12px] text-muted-foreground">
+              <Icon className="h-4 w-4 text-amber-500/80" strokeWidth={2} />
+              <span>{t.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Audit log preview (demo)
+function AuditLogPreview({ entries }: { entries: AuditEntry[] }) {
+  return (
+    <div className="security-section opacity-0 mb-6 max-w-[1400px] rounded-lg border border-border bg-card overflow-hidden">
+      <div className="border-b border-border px-4 py-3 flex items-center justify-between">
+        <div className="caps-label text-[10px] text-muted-foreground">RECENT ACTIVITY</div>
+        <button className="text-[11px] text-primary hover:underline flex items-center gap-1">
+          View all <ExternalLink className="h-3 w-3" />
+        </button>
+      </div>
+      <div className="max-h-[220px] overflow-auto">
+        <table className="w-full">
+          <thead className="bg-muted/30 sticky top-0">
+            <tr>
+              <th className="text-left px-4 py-2 caps-label text-[10px] text-muted-foreground">TIME</th>
+              <th className="text-left px-4 py-2 caps-label text-[10px] text-muted-foreground">TYPE</th>
+              <th className="text-left px-4 py-2 caps-label text-[10px] text-muted-foreground">STATUS</th>
+              <th className="text-left px-4 py-2 caps-label text-[10px] text-muted-foreground">DETAIL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e) => (
+              <tr key={e.id} className="border-t border-border hover:bg-muted/20">
+                <td className="px-4 py-2 text-[12px] text-muted-foreground">{e.time}</td>
+                <td className="px-4 py-2 text-[12px] text-foreground">{e.type}</td>
+                <td className="px-4 py-2">
+                  <span className={cn(
+                    "caps-label text-[10px] px-1.5 py-0.5 rounded",
+                    e.status === "success" ? "bg-emerald-500/10 text-emerald-600" : "bg-destructive/10 text-destructive"
+                  )}>
+                    {e.status}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-[12px] text-muted-foreground">{e.detail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// Connections / secrets status strip (demo)
+function ConnectionsStrip() {
+  const items: { label: string; status: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { label: "Vault", status: "Connected", icon: Vault },
+    { label: "Env vars", status: "Protected", icon: FileKey },
+    { label: "API keys", status: "2 stored", icon: Key },
+  ];
+  return (
+    <div className="security-section opacity-0 mb-6 max-w-[1400px] rounded-lg border border-border bg-card p-4">
+      <div className="caps-label text-[10px] text-muted-foreground mb-3">CONNECTIONS & SECRETS</div>
+      <div className="flex flex-wrap gap-6">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label} className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <Icon className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <div className="text-[12px] font-medium text-foreground">{item.label}</div>
+                <div className="text-[11px] text-muted-foreground">{item.status}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Blocked attempts (demo)
+function BlockedAttempts({ attempts }: { attempts: BlockedAttempt[] }) {
+  return (
+    <div className="security-section opacity-0 mb-6 max-w-[1400px] rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="caps-label text-[10px] text-muted-foreground">BLOCKED ATTEMPTS TODAY</div>
+        <span className="mono text-[18px] font-bold text-amber-500">{attempts.length}</span>
+      </div>
+      <ul className="space-y-2">
+        {attempts.map((a) => (
+          <li key={a.id} className="flex items-center justify-between text-[12px] py-1.5 border-b border-border/50 last:border-0">
+            <span className="text-foreground">{a.type}</span>
+            <span className="text-muted-foreground">{a.time}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Active threats (demo)
+function ActiveThreatsSection({ threats }: { threats: ActiveThreat[] }) {
+  return (
+    <div className="security-section opacity-0 mb-6 max-w-[1400px] rounded-lg border border-border bg-card p-4">
+      <div className="caps-label text-[10px] text-muted-foreground mb-3">ACTIVE THREATS</div>
+      {threats.length === 0 ? (
+        <div className="flex items-center gap-2 text-[12px] text-emerald-600 py-2">
+          <CircleCheck className="h-4 w-4" strokeWidth={2} />
+          <span>No active threats</span>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {threats.map((t) => (
+            <li key={t.id} className="flex items-start gap-2 text-[12px]">
+              <AlertTriangle className={cn("h-4 w-4 shrink-0 mt-0.5", t.severity === "medium" ? "text-amber-500" : "text-muted-foreground")} />
+              <span className="text-muted-foreground">{t.message}</span>
+              <span className={cn("caps-label text-[9px] px-1.5 py-0.5 rounded", t.severity === "medium" ? "bg-amber-500/10 text-amber-600" : "bg-muted text-muted-foreground")}>{t.severity}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -527,6 +730,12 @@ function SecurityAssessment({
         </button>
       </div>
 
+      {/* Trend */}
+      <div className="flex items-center gap-2 mb-6 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+        <TrendingUp className="h-4 w-4 text-emerald-600" strokeWidth={2} />
+        <span className="text-[12px] text-emerald-700 dark:text-emerald-400">Score up 5% from last week</span>
+      </div>
+
       <div className="grid grid-cols-3 gap-6">
         {/* Score */}
         <div className="flex flex-col items-center p-6 rounded-lg border border-border bg-muted/30">
@@ -558,6 +767,37 @@ function SecurityAssessment({
             {criticalEnabled}/{criticalTotal}
           </div>
           <div className="caps-label text-[10px] text-muted-foreground">CRITICAL ACTIVE</div>
+        </div>
+      </div>
+
+      {/* Extra metrics */}
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="p-4 rounded-lg border border-border bg-muted/20 flex items-center justify-between">
+          <span className="caps-label text-[10px] text-muted-foreground">CHECKS PASSED</span>
+          <span className="mono text-[14px] font-semibold text-foreground">24/24</span>
+        </div>
+        <div className="p-4 rounded-lg border border-border bg-muted/20 flex items-center justify-between">
+          <span className="caps-label text-[10px] text-muted-foreground">LAST FULL SCAN</span>
+          <span className="mono text-[14px] font-semibold text-foreground">2 hours ago</span>
+        </div>
+      </div>
+
+      {/* Score over time (demo) */}
+      <div className="mt-6 p-4 rounded-lg border border-border bg-muted/20">
+        <div className="caps-label text-[10px] text-muted-foreground mb-3">SCORE OVER TIME</div>
+        <div className="flex items-end gap-2 h-12">
+          {[72, 78, 75, 82, 85, 83, score].map((v, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-t bg-primary/30 min-w-0"
+              style={{ height: `${Math.max(12, (v / 100) * 48)}px` }}
+              title={`${v}%`}
+            />
+          ))}
+        </div>
+        <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
+          <span>7 days ago</span>
+          <span>Now</span>
         </div>
       </div>
 
@@ -652,6 +892,14 @@ export default function Security() {
         duration: durations.normal,
         easing: easings.smooth,
       });
+      anime({
+        targets: containerRef.current.querySelectorAll(".security-section"),
+        translateY: [16, 0],
+        opacity: [0, 1],
+        delay: anime.stagger(60, { start: 200 }),
+        duration: durations.normal,
+        easing: easings.smooth,
+      });
     }
   }, [mode]);
 
@@ -683,7 +931,7 @@ export default function Security() {
     return <SecurityLanding onModeSelect={handleModeSelect} />;
   }
 
-  // Custom mode shows file manager
+  // Custom mode shows tabs: Rules, Policies, Integrations, Alerts
   if (mode === "custom") {
     return (
       <div ref={containerRef} className="flex flex-col h-full">
@@ -713,7 +961,129 @@ export default function Security() {
           </div>
         </div>
 
-        <SecurityFileManager />
+        <Tabs defaultValue="rules" className="flex-1 flex flex-col min-h-0">
+          <div className="border-b border-border px-6 pt-3 bg-background">
+            <TabsList className="h-9 bg-muted/50">
+              <TabsTrigger value="rules" className="text-[11px] px-4">Rules</TabsTrigger>
+              <TabsTrigger value="policies" className="text-[11px] px-4">Policies</TabsTrigger>
+              <TabsTrigger value="integrations" className="text-[11px] px-4">Integrations</TabsTrigger>
+              <TabsTrigger value="alerts" className="text-[11px] px-4">Alerts</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="rules" className="flex-1 min-h-0 mt-0">
+            <SecurityFileManager />
+          </TabsContent>
+          <TabsContent value="policies" className="flex-1 min-h-0 mt-0 overflow-auto p-6">
+            <div className="max-w-[1400px]">
+              <div className="rounded-lg border border-border bg-background overflow-hidden">
+                <table className="w-full">
+                  <thead className="border-b border-border bg-muted/30">
+                    <tr>
+                      <th className="text-left px-4 py-3 caps-label text-[10px] text-muted-foreground">POLICY</th>
+                      <th className="text-left px-4 py-3 caps-label text-[10px] text-muted-foreground">STATUS</th>
+                      <th className="text-left px-4 py-3 caps-label text-[10px] text-muted-foreground">LAST UPDATED</th>
+                      <th className="text-right px-4 py-3 caps-label text-[10px] text-muted-foreground">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MOCK_POLICIES.map((p) => (
+                      <tr key={p.id} className="border-b border-border hover:bg-muted/30">
+                        <td className="px-4 py-3 text-[13px] font-medium text-foreground">{p.name}</td>
+                        <td className="px-4 py-3">
+                          <span className={cn(
+                            "caps-label text-[10px] px-2 py-0.5 rounded",
+                            p.status === "Active" ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground"
+                          )}>{p.status}</span>
+                        </td>
+                        <td className="px-4 py-3 text-[12px] text-muted-foreground">{p.updated}</td>
+                        <td className="px-4 py-3 text-right">
+                          <button className="text-[11px] text-primary hover:underline">Edit</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button className="mt-4 flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted transition-colors text-[11px] font-medium">
+                <Plus className="h-3.5 w-3.5" /> Add policy
+              </button>
+            </div>
+          </TabsContent>
+          <TabsContent value="integrations" className="flex-1 min-h-0 mt-0 overflow-auto p-6">
+            <div className="max-w-[1400px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {MOCK_INTEGRATIONS.map((int) => {
+                const Icon = int.icon;
+                return (
+                  <div key={int.id} className="rounded-lg border border-border bg-card p-4 flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "h-12 w-12 rounded-lg flex items-center justify-center",
+                        int.status === "Connected" ? "bg-emerald-500/10" : "bg-muted/50"
+                      )}>
+                        <Icon className={cn("h-6 w-6", int.status === "Connected" ? "text-emerald-600" : "text-muted-foreground")} />
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-medium text-foreground">{int.name}</div>
+                        <div className={cn(
+                          "text-[11px]",
+                          int.status === "Connected" ? "text-emerald-600" : "text-muted-foreground"
+                        )}>{int.status}</div>
+                      </div>
+                    </div>
+                    <button className="px-3 py-1.5 rounded-md border border-border hover:bg-muted text-[11px] font-medium">
+                      {int.status === "Connected" ? "Configure" : "Set up"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[12px] text-muted-foreground mt-4">Connect external vaults, export audit logs, and configure webhooks for alerts.</p>
+          </TabsContent>
+          <TabsContent value="alerts" className="flex-1 min-h-0 mt-0 overflow-auto p-6">
+            <div className="max-w-[1400px]">
+              <div className="rounded-lg border border-border bg-background overflow-hidden">
+                <div className="border-b border-border px-4 py-3 flex items-center justify-between">
+                  <span className="caps-label text-[10px] text-muted-foreground">ALERT HISTORY</span>
+                  <button className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                    Configure rules <Settings className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <table className="w-full">
+                  <thead className="bg-muted/30">
+                    <tr>
+                      <th className="text-left px-4 py-2 caps-label text-[10px] text-muted-foreground">TIME</th>
+                      <th className="text-left px-4 py-2 caps-label text-[10px] text-muted-foreground">SEVERITY</th>
+                      <th className="text-left px-4 py-2 caps-label text-[10px] text-muted-foreground">MESSAGE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MOCK_ALERTS.map((a) => (
+                      <tr key={a.id} className="border-t border-border hover:bg-muted/30">
+                        <td className="px-4 py-3 text-[12px] text-muted-foreground">{a.time}</td>
+                        <td className="px-4 py-3">
+                          <span className={cn(
+                            "caps-label text-[9px] px-1.5 py-0.5 rounded",
+                            a.severity === "high" && "bg-destructive/10 text-destructive",
+                            a.severity === "medium" && "bg-amber-500/10 text-amber-600",
+                            a.severity === "low" && "bg-muted text-muted-foreground"
+                          )}>{a.severity}</span>
+                        </td>
+                        <td className="px-4 py-3 text-[12px] text-foreground">{a.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-[12px] text-muted-foreground">Email alerts: On</span>
+                </div>
+                <button className="text-[11px] text-primary hover:underline">Change notification settings</button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }
@@ -751,6 +1121,21 @@ export default function Security() {
 
           {/* Stats and Actions */}
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 rounded-full border-2 border-border flex items-center justify-center bg-muted/30">
+                <span className={cn(
+                  "mono text-[11px] font-bold",
+                  Math.round((enabledCount / features.length) * 100) >= 80 ? "text-emerald-500" : Math.round((enabledCount / features.length) * 100) >= 50 ? "text-amber-500" : "text-destructive"
+                )}>
+                  {Math.round((enabledCount / features.length) * 100)}%
+                </span>
+              </div>
+              <div>
+                <div className="mono text-[11px] font-medium text-foreground">Score</div>
+                <Progress value={Math.round((enabledCount / features.length) * 100)} className="w-16 h-1.5" />
+              </div>
+            </div>
+            <div className="h-10 w-px bg-border" />
             <div className="text-right">
               <div className="mono text-[13px] font-semibold text-foreground">{enabledCount}/{features.length}</div>
               <div className="caps-label text-[10px] text-muted-foreground">ENABLED</div>
@@ -794,12 +1179,21 @@ export default function Security() {
           <SecurityAssessment features={features} onClose={() => setShowAssessment(false)} />
         )}
 
+        <ThreatSummary />
+        <AuditLogPreview entries={MOCK_AUDIT_ENTRIES} />
+        <ConnectionsStrip />
+
         <div className="grid grid-cols-2 gap-4 max-w-[1400px]">
           {features.map((feature) => (
             <div key={feature.id} className="feature-card opacity-0">
               <FeatureCard feature={feature} onToggle={() => toggleFeature(feature.id)} />
             </div>
           ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[1400px] mt-6">
+          <BlockedAttempts attempts={MOCK_BLOCKED_ATTEMPTS} />
+          <ActiveThreatsSection threats={MOCK_ACTIVE_THREATS} />
         </div>
 
         {/* Warning banner if critical features disabled */}
