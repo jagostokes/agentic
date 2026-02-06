@@ -281,7 +281,7 @@ export default function Chat() {
     navigator.clipboard?.writeText(content);
   };
 
-  const simulateResponse = async (userMessage: string) => {
+  const getAIResponse = async (userMessage: string) => {
     // Add streaming placeholder
     const assistantId = `msg-${Date.now()}-assistant`;
     setMessages((prev) => [
@@ -295,32 +295,66 @@ export default function Chat() {
       },
     ]);
 
-    // Simulate typing delay
-    await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
+    try {
+      // Build conversation history for context
+      const conversationMessages = [
+        {
+          role: "system",
+          content: "You are CLAWDBOT, a helpful AI agent assistant. You help users with task management, system monitoring, security oversight, and provide clear, concise responses. Keep your responses professional but friendly."
+        },
+        ...messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        {
+          role: "user",
+          content: userMessage
+        }
+      ];
 
-    // Sample responses based on input
-    let response = "I understand your request. Let me process that for you.";
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: conversationMessages,
+        }),
+      });
 
-    if (userMessage.toLowerCase().includes("task")) {
-      response = `Current task status:\n\n• T1: Audit cron drift — DONE\n• T2: Summarize competitor UI changes — PENDING\n• T3: Investigate deviation SESSION-72F9 — FAILED (requires intervention)\n• T4: Normalize channel taxonomy — DONE\n\nWould you like me to provide more details on any specific task?`;
-    } else if (userMessage.toLowerCase().includes("health") || userMessage.toLowerCase().includes("status")) {
-      response = `System Health Report:\n\n✓ Gateway: GW.NYC-01 — OPERATIONAL\n✓ WebSocket bus: STABLE (1.2k msg/min)\n✓ Model provider: DEGRADED (rate limits tightened)\n⚠ Agent deviation detected: SESSION-72F9\n\nOverall status: NOMINAL with 1 attention item.`;
-    } else if (userMessage.toLowerCase().includes("security")) {
-      response = `Security Overview:\n\n• No unauthorized access attempts in last 24h\n• All API keys rotated on schedule\n• SESSION-72F9 flagged for policy override attempt\n• Sandbox isolation: ACTIVE\n• Credential vault: ENCRYPTED\n\nRecommendation: Review SESSION-72F9 logs before resuming.`;
-    } else if (userMessage.toLowerCase().includes("hello") || userMessage.toLowerCase().includes("hi")) {
-      response = `Hello! I'm your CLAWDBOT agent assistant. I can help you with:\n\n• Task management and status updates\n• System health monitoring\n• Security oversight\n• Competitive intelligence\n• Direct interventions\n\nWhat would you like to know?`;
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices?.[0]?.message?.content || "I apologize, but I couldn't generate a response.";
+
+      // Update message with AI response
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantId
+            ? { ...msg, content: aiResponse, isStreaming: false }
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+
+      // Show error message
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantId
+            ? {
+                ...msg,
+                content: "I apologize, but I encountered an error processing your request. Please try again.",
+                isStreaming: false,
+              }
+            : msg
+        )
+      );
+    } finally {
+      setIsGenerating(false);
     }
-
-    // Simulate streaming effect
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === assistantId
-          ? { ...msg, content: response, isStreaming: false }
-          : msg
-      )
-    );
-
-    setIsGenerating(false);
   };
 
   const handleSend = async () => {
@@ -338,7 +372,7 @@ export default function Chat() {
     setInput("");
     setIsGenerating(true);
 
-    await simulateResponse(trimmed);
+    await getAIResponse(trimmed);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -355,7 +389,7 @@ export default function Chat() {
       // Remove last assistant message and regenerate
       setMessages((prev) => prev.slice(0, -1));
       setIsGenerating(true);
-      simulateResponse(lastUserMessage.content);
+      getAIResponse(lastUserMessage.content);
     }
   };
 
