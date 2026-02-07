@@ -31,10 +31,10 @@ import {
   useBreathingGlow,
 } from "@/hooks/use-animations";
 import { createRipple, scalePop, staggerEntrance, easings, durations } from "@/lib/animations";
-import Chat from "@/features/agent/chat";
+import ChatWithTasks from "@/features/agent/chat-with-tasks";
 import Security from "@/features/agent/security";
 import ContextModification from "@/features/agent/context-modification";
-import NewAgent from "@/features/agent/new-agent";
+import NewAgentWrapper from "@/features/agent/new-agent-wrapper";
 import Soul from "@/features/agent/soul";
 
 type Health = "OK" | "DEGRADED" | "INCIDENT";
@@ -82,23 +82,6 @@ type NavItem = {
   subItems?: { label: string; icon: React.ComponentType<{ className?: string }> }[];
 };
 
-const navItems: NavItem[] = [
-  { id: "new-agent", label: "NEW AGENT", icon: Plus },
-  {
-    id: "agent-a",
-    label: "Agent A",
-    icon: Bot,
-    subItems: [
-      { label: "CHAT", icon: MessageSquare },
-      { label: "SECURITY", icon: ShieldCheck },
-      { label: "CONTEXT MODIFICATION", icon: Brain },
-      { label: "ABILITIES", icon: Zap },
-      { label: "SOUL / PURPOSE", icon: Sparkles },
-      { label: "HISTORY", icon: History },
-      { label: "RECURRING TASKS", icon: Activity },
-    ]
-  },
-];
 
 // Animated Health Pill with pulse effect
 function HealthPill({ health }: { health: Health }) {
@@ -943,6 +926,11 @@ function FloatingParticles() {
 }
 
 export default function Dashboard() {
+  const [activeNav, setActiveNav] = useState<string>("new-agent");
+  const [activeSubTab, setActiveSubTab] = useState<string>("CHAT");
+  const [health, setHealth] = useState<Health>("OK");
+  const [agentAVisible, setAgentAVisible] = useState(false);
+
   const gateways = useMemo<Gateway[]>(
     () => [
       { id: "gw-nyc-01", label: "GW.NYC-01 / 10.0.14.21" },
@@ -952,11 +940,33 @@ export default function Dashboard() {
     [],
   );
 
-  const [activeNav, setActiveNav] = useState<string>("agent-a");
-  const [activeSubTab, setActiveSubTab] = useState<string>("CHAT");
-  const [health, setHealth] = useState<Health>("OK");
   const [activeGateway, setActiveGateway] = useState(gateways[0]?.id ?? "gw-nyc-01");
   const [resyncState, setResyncState] = useState<"idle" | "pending" | "resolved" | "failed">("idle");
+
+  const navItems: NavItem[] = useMemo(() => {
+    const items: NavItem[] = [
+      { id: "new-agent", label: "NEW AGENT", icon: Plus },
+    ];
+
+    if (agentAVisible) {
+      items.push({
+        id: "agent-a",
+        label: "Agent A",
+        icon: Bot,
+        subItems: [
+          { label: "CHAT", icon: MessageSquare },
+          { label: "SECURITY", icon: ShieldCheck },
+          { label: "CONTEXT MODIFICATION", icon: Brain },
+          { label: "ABILITIES", icon: Zap },
+          { label: "SOUL / PURPOSE", icon: Sparkles },
+          { label: "HISTORY", icon: History },
+          { label: "RECURRING TASKS", icon: Activity },
+        ]
+      });
+    }
+
+    return items;
+  }, [agentAVisible]);
 
   const [sendOnEnter, setSendOnEnter] = useState(false);
   const [input, setInput] = useState("");
@@ -1172,6 +1182,12 @@ export default function Dashboard() {
     setActiveSubTab(label);
   }, []);
 
+  const handleAgentCreated = useCallback(() => {
+    setAgentAVisible(true);
+    setActiveNav("agent-a");
+    setActiveSubTab("CHAT");
+  }, []);
+
   return (
     <div className={cn("min-h-screen bg-background text-foreground relative", !incidentMode && "scanlines")} data-testid="page-dashboard">
       <FloatingParticles />
@@ -1280,15 +1296,11 @@ export default function Dashboard() {
 
           <div className="flex min-h-0 flex-1 flex-col">
             {activeNav === "new-agent" ? (
-              <NewAgent />
+              <NewAgentWrapper onAgentCreated={handleAgentCreated} />
             ) : activeNav === "agent-a" && activeSubTab === "CHAT" ? (
-              <div className="min-h-0 flex-1 flex p-4 gap-4 bg-[hsl(var(--muted))]/30">
-                {/* Chat area */}
-                <div className="flex-[1.5] min-h-0">
-                  <Chat />
-                </div>
-                {/* Background Tasks Panel */}
-                <BackgroundTasksPanel />
+              <div className="min-h-0 flex-1 p-4 bg-[hsl(var(--muted))]/30 overflow-hidden">
+                {/* Chat with Tasks area */}
+                <ChatWithTasks />
               </div>
             ) : activeNav === "agent-a" && activeSubTab === "SECURITY" ? (
               <div className="min-h-0 flex-1 bg-[hsl(var(--muted))]/30">

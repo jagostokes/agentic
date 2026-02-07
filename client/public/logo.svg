@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <style>
+      .compass-line {
+        fill: none;
+        stroke: #ff4444;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .compass-circle {
+        fill: none;
+        stroke: #ff4444;
+        stroke-width: 2.5;
+      }
+      .compass-node {
+        fill: #ff4444;
+        stroke: #ff4444;
+        stroke-width: 2;
+      }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#000000"/>
+
+  <!-- Outer circle -->
+  <circle cx="200" cy="200" r="180" class="compass-circle"/>
+
+  <!-- Inner circle -->
+  <circle cx="200" cy="200" r="25" class="compass-circle"/>
+
+  <!-- Main cardinal directions (N, S, E, W) -->
+  <line x1="200" y1="20" x2="200" y2="200" class="compass-line" stroke-width="3"/>
+  <line x1="200" y1="380" x2="200" y2="200" class="compass-line" stroke-width="3"/>
+  <line x1="20" y1="200" x2="200" y2="200" class="compass-line" stroke-width="3"/>
+  <line x1="380" y1="200" x2="200" y2="200" class="compass-line" stroke-width="3"/>
+
+  <!-- Diagonal lines (NE, SE, SW, NW) -->
+  <line x1="327" y1="73" x2="200" y2="200" class="compass-line"/>
+  <line x1="327" y1="327" x2="200" y2="200" class="compass-line"/>
+  <line x1="73" y1="327" x2="200" y2="200" class="compass-line"/>
+  <line x1="73" y1="73" x2="200" y2="200" class="compass-line"/>
+
+  <!-- Outer arcs connecting cardinal points -->
+  <path d="M 200 20 Q 240 60, 327 73" class="compass-line"/>
+  <path d="M 327 73 Q 340 140, 380 200" class="compass-line"/>
+  <path d="M 380 200 Q 340 260, 327 327" class="compass-line"/>
+  <path d="M 327 327 Q 260 340, 200 380" class="compass-line"/>
+  <path d="M 200 380 Q 140 340, 73 327" class="compass-line"/>
+  <path d="M 73 327 Q 60 260, 20 200" class="compass-line"/>
+  <path d="M 20 200 Q 60 140, 73 73" class="compass-line"/>
+  <path d="M 73 73 Q 140 60, 200 20" class="compass-line"/>
+
+  <!-- Inner geometric pattern -->
+  <path d="M 200 20 L 327 73 L 327 200" class="compass-line"/>
+  <path d="M 327 73 L 380 200 L 327 200" class="compass-line"/>
+  <path d="M 380 200 L 327 327 L 200 327" class="compass-line"/>
+  <path d="M 327 327 L 200 380 L 200 327" class="compass-line"/>
+  <path d="M 200 380 L 73 327 L 73 200" class="compass-line"/>
+  <path d="M 73 327 L 20 200 L 73 200" class="compass-line"/>
+  <path d="M 20 200 L 73 73 L 200 73" class="compass-line"/>
+  <path d="M 73 73 L 200 20 L 200 73" class="compass-line"/>
+
+  <!-- Additional inner triangular patterns -->
+  <path d="M 200 73 L 327 200 L 200 200 Z" class="compass-line"/>
+  <path d="M 327 200 L 200 327 L 200 200 Z" class="compass-line"/>
+  <path d="M 200 327 L 73 200 L 200 200 Z" class="compass-line"/>
+  <path d="M 73 200 L 200 73 L 200 200 Z" class="compass-line"/>
+
+  <!-- Nodes at cardinal points -->
+  <circle cx="200" cy="20" r="6" class="compass-node"/>
+  <circle cx="380" cy="200" r="6" class="compass-node"/>
+  <circle cx="200" cy="380" r="6" class="compass-node"/>
+  <circle cx="20" cy="200" r="6" class="compass-node"/>
+
+  <!-- Nodes at diagonal points -->
+  <circle cx="327" cy="73" r="6" class="compass-node"/>
+  <circle cx="327" cy="327" r="6" class="compass-node"/>
+  <circle cx="73" cy="327" r="6" class="compass-node"/>
+  <circle cx="73" cy="73" r="6" class="compass-node"/>
+
+  <!-- Center node -->
+  <circle cx="200" cy="200" r="8" class="compass-node"/>
+</svg>

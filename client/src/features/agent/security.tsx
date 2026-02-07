@@ -101,6 +101,97 @@ const MOCK_ACTIVE_THREATS: ActiveThreat[] = [
   { id: "t1", severity: "low", message: "Unusual token usage in last 24h" },
 ];
 
+// Doctor command execution panel
+function DoctorCommandPanel() {
+  const [isRunning, setIsRunning] = useState(true);
+  const [result, setResult] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Drop down animation
+    if (panelRef.current) {
+      anime({
+        targets: panelRef.current,
+        maxHeight: [0, 400],
+        opacity: [0, 1],
+        duration: durations.normal,
+        easing: easings.smooth,
+      });
+    }
+
+    // Simulate command execution
+    const timer = setTimeout(() => {
+      setIsRunning(false);
+      setResult(`Security Doctor Check Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Environment protection: Active
+✓ Prompt injection defense: Active
+✓ Loop detection: Active
+✓ Decision safeguards: Active
+✓ API rate limiting: Configured
+✓ Audit logging: Enabled
+
+Status: All systems operational
+Security Score: 98/100
+Last scan: Just now`);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div
+      ref={panelRef}
+      className="mb-6 overflow-hidden rounded-xl border-2 border-[hsl(var(--primary))]/30 bg-card"
+      style={{ maxHeight: 0, opacity: 0 }}
+    >
+      <div className="border-b border-border bg-[hsl(var(--primary))]/5 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Activity className="h-4 w-4 text-[hsl(var(--primary))]" strokeWidth={2} />
+          <span className="mono text-[13px] font-semibold text-foreground">
+            Security Doctor Command
+          </span>
+          {isRunning && (
+            <span className="ml-auto flex items-center gap-2 text-[11px] text-muted-foreground">
+              <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              RUNNING
+            </span>
+          )}
+          {!isRunning && (
+            <span className="ml-auto flex items-center gap-2 text-[11px] text-emerald-600">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              COMPLETE
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div ref={contentRef} className="p-4">
+        {isRunning ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="mb-4 flex items-center gap-3">
+              <RefreshCw className="h-6 w-6 text-[hsl(var(--primary))] animate-spin" strokeWidth={2} />
+              <span className="mono text-[14px] font-medium text-foreground">
+                Running Doctor command...
+              </span>
+            </div>
+            <div className="text-[12px] text-muted-foreground">
+              Checking security configuration and system health
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border bg-background p-4">
+            <pre className="mono text-[11px] leading-relaxed text-foreground whitespace-pre-wrap">
+              {result}
+            </pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Landing page with mode selection
 function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,7 +202,7 @@ function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) 
         targets: containerRef.current.querySelectorAll(".animate-card"),
         translateY: [40, 0],
         opacity: [0, 1],
-        delay: anime.stagger(150, { start: 200 }),
+        delay: anime.stagger(150, { start: 800 }),
         duration: durations.slow,
         easing: easings.smooth,
       });
@@ -142,6 +233,11 @@ function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) 
 
   return (
     <div ref={containerRef} className="flex flex-col items-center justify-center min-h-full p-8">
+      {/* Doctor Command Panel */}
+      <div className="w-full max-w-[900px]">
+        <DoctorCommandPanel />
+      </div>
+
       {/* Header */}
       <div className="animate-card text-center mb-8 opacity-0">
         <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-[hsl(var(--primary))]/30 bg-[hsl(var(--primary))]/10 mb-6">
@@ -827,7 +923,7 @@ function SecurityAssessment({
 
 // Main security configuration component
 export default function Security() {
-  const [mode, setMode] = useState<SecurityMode>(null);
+  const [mode, setMode] = useState<SecurityMode>("base");
   const [showAssessment, setShowAssessment] = useState(false);
   const [features, setFeatures] = useState<SecurityFeature[]>([
     {
@@ -903,6 +999,18 @@ export default function Security() {
     }
   }, [mode]);
 
+  // Initialize with base security features enabled
+  useEffect(() => {
+    if (mode === "base") {
+      setFeatures((prev) =>
+        prev.map((f) => ({
+          ...f,
+          enabled: f.level === "critical" || f.level === "high",
+        }))
+      );
+    }
+  }, [mode]);
+
   const handleModeSelect = (selectedMode: SecurityMode) => {
     setMode(selectedMode);
 
@@ -924,12 +1032,8 @@ export default function Security() {
   };
 
   const handleReset = () => {
-    setMode(null);
+    setMode("base");
   };
-
-  if (!mode) {
-    return <SecurityLanding onModeSelect={handleModeSelect} />;
-  }
 
   // Custom mode shows tabs: Rules, Policies, Integrations, Alerts
   if (mode === "custom") {
