@@ -229,7 +229,7 @@ function SecurityLanding({ onModeSelect }: { onModeSelect: (mode: SecurityMode) 
   ];
 
   const lastScanMinutes = 12;
-  const agentName = "Agent A";
+  const agentName = "Jarvis";
 
   return (
     <div ref={containerRef} className="flex flex-col items-center justify-center min-h-full p-8">

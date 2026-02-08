@@ -951,7 +951,7 @@ export default function Dashboard() {
     if (agentAVisible) {
       items.push({
         id: "agent-a",
-        label: "Agent A",
+        label: "Jarvis",
         icon: Bot,
         subItems: [
           { label: "CHAT", icon: MessageSquare },

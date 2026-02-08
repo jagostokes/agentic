@@ -416,7 +416,7 @@ export default function Chat() {
               <Bot className="h-5 w-5 text-[hsl(var(--primary))]" strokeWidth={2} />
             </div>
             <div>
-              <div className="mono text-[14px] font-semibold text-foreground">Agent Chat</div>
+              <div className="mono text-[14px] font-semibold text-foreground">Jarvis Chat</div>
               <div className="text-[11px] text-muted-foreground">
                 Update what you want your agent to focus on.
               </div>
@@ -472,7 +472,7 @@ export default function Chat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Agent A..."
+              placeholder="Message Jarvis..."
               rows={1}
               className={cn(
                 "mono w-full resize-none rounded-lg border border-border bg-[hsl(var(--muted))] px-4 py-3 pr-12 text-[13px]",

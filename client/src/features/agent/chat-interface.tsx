@@ -115,7 +115,7 @@ function MessageBubble({
       <div className={cn("flex flex-col gap-1 max-w-[75%]", isUser && "items-end")}>
         <div className="flex items-center gap-2">
           <span className="caps-label text-[9px] text-muted-foreground">
-            {isUser ? "YOU" : "AGENT A"}
+            {isUser ? "YOU" : "JARVIS"}
           </span>
           <span className="text-[9px] text-muted-foreground/60">
             {message.timestamp.toLocaleTimeString(undefined, {
@@ -268,9 +268,6 @@ export default function ChatInterface() {
   };
 
   const getAIResponse = async (userMessage: string) => {
-    // Check if this is a task creation request
-    const isTaskCreation = /^(make|create|add|new)\s+(a\s+)?task/i.test(userMessage.trim());
-
     // Add streaming placeholder
     const assistantId = `msg-${Date.now()}-assistant`;
     setMessages((prev) => [
@@ -285,25 +282,49 @@ export default function ChatInterface() {
     ]);
 
     try {
-      if (isTaskCreation) {
-        // Extract task description (everything after "make a task:")
-        const taskDescription = userMessage.replace(/^(make|create|add|new)\s+(a\s+)?task\s*:?\s*/i, "").trim();
+      // First, determine if this is an action request or a question
+      const classifyResponse = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "system",
+              content: `You are a message classifier. Determine if the user's message is:
+1. ACTION - A request to DO something (e.g., "send an email", "analyze data", "check the weather", "schedule a meeting", "write code", "research topics")
+2. QUESTION - A request for information or clarification (e.g., "what is...", "how does...", "explain...", "tell me about...")
 
-        if (!taskDescription) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantId
-                ? {
-                    ...msg,
-                    content: "Please provide a description of the task you want to create.",
-                    isStreaming: false,
-                  }
-                : msg
-            )
-          );
-          setIsGenerating(false);
-          return;
-        }
+Respond with ONLY ONE WORD: either "ACTION" or "QUESTION".
+
+Examples:
+- "send an email to John" → ACTION
+- "analyze the sales data" → ACTION
+- "check the weather tomorrow" → ACTION
+- "what's the weather like?" → QUESTION
+- "how do I send an email?" → QUESTION
+- "explain how weather works" → QUESTION
+- "schedule a meeting for 3pm" → ACTION
+- "when should I schedule the meeting?" → QUESTION`
+            },
+            {
+              role: "user",
+              content: userMessage
+            }
+          ]
+        }),
+      });
+
+      if (!classifyResponse.ok) {
+        throw new Error("Failed to classify message");
+      }
+
+      const classifyData = await classifyResponse.json();
+      const classification = classifyData.choices?.[0]?.message?.content?.trim().toUpperCase();
+
+      if (classification === "ACTION") {
+        // This is an action request - create a task
 
         // Parse task with Grok
         const parseResponse = await fetch("/api/tasks/parse", {
@@ -311,7 +332,7 @@ export default function ChatInterface() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ input: taskDescription }),
+          body: JSON.stringify({ input: userMessage }),
         });
 
         if (!parseResponse.ok) {
@@ -336,7 +357,7 @@ export default function ChatInterface() {
         const newTask = await createResponse.json();
 
         // Show success message
-        const successMessage = `✓ Task created successfully!\n\nTitle: ${newTask.title}\nDescription: ${newTask.description || "None"}\nStatus: ${newTask.status}\n\nThe task has been added to your task manager.`;
+        const successMessage = `✓ Task created: "${newTask.title}"\n\n${newTask.description || "No additional details"}\n\nI'll get started on this right away.`;
 
         setMessages((prev) =>
           prev.map((msg) =>
@@ -349,13 +370,13 @@ export default function ChatInterface() {
         // Trigger a custom event to refresh tasks
         window.dispatchEvent(new CustomEvent("task-created", { detail: newTask }));
       } else {
-        // Regular chat response
+        // This is a question - respond normally
         const conversationMessages = [
           {
             role: "system",
-            content: "You are CLAWDBOT, a helpful AI agent assistant. You help users with task management, system monitoring, security oversight, and provide clear, concise responses. Keep your responses professional but friendly."
+            content: "You are Jarvis, a helpful AI assistant. Answer questions clearly, concisely, and professionally. Provide accurate information and helpful guidance."
           },
-          ...messages.map(msg => ({
+          ...messages.filter(m => !m.isStreaming).map(msg => ({
             role: msg.role,
             content: msg.content
           })),
@@ -464,7 +485,7 @@ export default function ChatInterface() {
               <Bot className="h-4 w-4 text-[hsl(var(--primary))]" strokeWidth={2} />
             </div>
             <div>
-              <div className="mono text-[12px] font-semibold text-foreground">Agent A Chat</div>
+              <div className="mono text-[12px] font-semibold text-foreground">Jarvis Chat</div>
             </div>
           </div>
 
@@ -517,7 +538,7 @@ export default function ChatInterface() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Agent A..."
+              placeholder="Message Jarvis..."
               rows={1}
               className={cn(
                 "mono w-full resize-none rounded-lg border border-border bg-[hsl(var(--muted))] px-3 py-2 pr-10 text-[12px]",
