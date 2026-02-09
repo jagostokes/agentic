@@ -13,7 +13,7 @@ Full-stack TypeScript application using Express backend with React frontend. Bui
 ```bash
 # Development (runs server with HMR)
 npm run dev
-
+x
 # Client only (Vite dev server on port 5000)
 npm run dev:client
 
