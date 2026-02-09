@@ -1,0 +1,71 @@
+// Prisma schema for OpenClaw/Moltbot (Clawdbot) agent platform.
+// Database: PostgreSQL. Run `npm run db:push` or `npm run db:migrate` after changes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agents       Agent[]
+  agentBindings AgentBinding[]
+}
+
+model Agent {
+  id                 String   @id @default(uuid())
+  userId             String
+  gatewayAgentId     String
+  gatewayWorkspaceId String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bindings AgentBinding[]
+  claims  AgentBindingClaim[]
+}
+
+enum ChannelType {
+  telegram
+}
+
+model AgentBinding {
+  id            String      @id @default(uuid())
+  userId        String
+  agentId       String
+  channelType   ChannelType @default(telegram)
+  channelUserId String // e.g. Telegram user id
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, channelType, channelUserId])
+  @@index([userId])
+  @@index([agentId])
+}
+
+model AgentBindingClaim {
+  id        String   @id @default(uuid())
+  agentId   String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([expiresAt])
+}
