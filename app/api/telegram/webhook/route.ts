@@ -6,7 +6,7 @@
  *
  * TODO: Secure this route (e.g. shared secret header or IP allowlist) so only your bot can call it.
  */
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { bindTelegramToAgent } from "@/lib/gateway";
 import { NextResponse } from "next/server";
 
@@ -31,36 +31,44 @@ export async function POST(request: Request) {
     );
   }
 
-  const claim = await prisma.agentBindingClaim.findUnique({
-    where: { token },
-    include: { agent: true },
-  });
+  const { data: claim, error: claimError } = await supabase
+    .from("agent_binding_claims")
+    .select("id, agent_id, expires_at, agents(gateway_agent_id, user_id)")
+    .eq("token", token)
+    .single();
 
-  if (!claim || claim.expiresAt < new Date()) {
+  type ClaimRow = {
+    id: string;
+    agent_id: string;
+    expires_at: string;
+    agents: { gateway_agent_id: string; user_id: string } | null;
+  };
+
+  const c = claim as ClaimRow | null;
+  if (claimError || !c || new Date(c.expires_at) < new Date()) {
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 400 });
   }
 
-  const { agentId, agent } = claim;
+  if (!c.agents) {
+    return NextResponse.json({ error: "Agent not found" }, { status: 400 });
+  }
 
-  await prisma.agentBinding.upsert({
-    where: {
-      agentId_channelType_channelUserId: {
-        agentId,
-        channelType: "telegram",
-        channelUserId: telegramUserId,
-      },
+  const { agent_id: agentId, agents: agent } = c;
+  const gatewayAgentId = agent.gateway_agent_id;
+  const userId = agent.user_id;
+
+  await supabase.from("agent_bindings").upsert(
+    {
+      user_id: userId,
+      agent_id: agentId,
+      channel_type: "telegram",
+      channel_user_id: telegramUserId,
     },
-    create: {
-      userId: agent.userId,
-      agentId,
-      channelType: "telegram",
-      channelUserId: telegramUserId,
-    },
-    update: {},
-  });
+    { onConflict: "agent_id,channel_type,channel_user_id" }
+  );
 
   try {
-    await bindTelegramToAgent(agent.gatewayAgentId, telegramUserId);
+    await bindTelegramToAgent(gatewayAgentId, telegramUserId);
   } catch (err) {
     console.error("Gateway bindTelegramToAgent failed:", err);
     return NextResponse.json(
@@ -69,7 +77,7 @@ export async function POST(request: Request) {
     );
   }
 
-  await prisma.agentBindingClaim.delete({ where: { id: claim.id } }).catch(() => {});
+  await supabase.from("agent_binding_claims").delete().eq("id", c.id);
 
   return NextResponse.json({ ok: true });
 }

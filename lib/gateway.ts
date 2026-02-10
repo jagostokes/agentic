@@ -24,9 +24,11 @@ const getToken = (): string => {
   return token;
 };
 
+type GatewayFetchOptions = Omit<RequestInit, "body"> & { body?: object };
+
 const gatewayFetch = async (
   path: string,
-  options: RequestInit & { body?: object } = {}
+  options: GatewayFetchOptions = {}
 ): Promise<Response> => {
   const { body, ...rest } = options;
   const url = `${getBaseUrl()}${path}`;
@@ -35,11 +37,11 @@ const gatewayFetch = async (
     Authorization: `Bearer ${getToken()}`,
     ...(rest.headers ?? {}),
   };
-  return fetch(url, {
-    ...rest,
-    headers,
-    body: body ? JSON.stringify(body) : rest.body,
-  });
+  const fetchOptions: RequestInit = { ...rest, headers };
+  if (body != null) {
+    fetchOptions.body = JSON.stringify(body);
+  }
+  return fetch(url, fetchOptions);
 };
 
 /**

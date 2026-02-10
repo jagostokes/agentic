@@ -6,7 +6,7 @@
  * TODO: Set TELEGRAM_BOT_USERNAME in env (e.g. "MyOpenClawBot" -> https://t.me/MyOpenClawBot).
  */
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 
@@ -27,23 +27,29 @@ export async function POST(
 
   const { agentId } = await params;
 
-  const agent = await prisma.agent.findFirst({
-    where: { id: agentId, userId: session.user.id },
-  });
-  if (!agent) {
+  const { data: agent, error: agentError } = await supabase
+    .from("agents")
+    .select("id")
+    .eq("id", agentId)
+    .eq("user_id", session.user.id)
+    .single();
+
+  if (agentError || !agent) {
     return NextResponse.json({ error: "Agent not found or access denied" }, { status: 404 });
   }
 
   const token = generateClaimToken();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  await prisma.agentBindingClaim.create({
-    data: {
-      agentId: agent.id,
-      token,
-      expiresAt,
-    },
+  const { error: claimError } = await supabase.from("agent_binding_claims").insert({
+    agent_id: agent.id,
+    token,
+    expires_at: expiresAt.toISOString(),
   });
+
+  if (claimError) {
+    return NextResponse.json({ error: "Failed to create claim" }, { status: 500 });
+  }
 
   const deepLink = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${token}`;
 

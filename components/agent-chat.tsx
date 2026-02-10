@@ -18,11 +18,13 @@ type Message = {
 
 type Props = {
   agentId: string;
+  /** When true, do not connect to gateway; show demo message instead. */
+  isDemoPlaceholder?: boolean;
 };
 
 const WS_URL = process.env.NEXT_PUBLIC_GATEWAY_WS_URL ?? "";
 
-export function AgentChat({ agentId }: Props) {
+export function AgentChat({ agentId, isDemoPlaceholder = false }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
@@ -41,6 +43,7 @@ export function AgentChat({ agentId }: Props) {
     scrollToBottom();
   }, [messages, scrollToBottom]);
   const connect = useCallback(async () => {
+    if (isDemoPlaceholder) return;
     if (!WS_URL) {
       setStatus("error");
       setErrorMessage("NEXT_PUBLIC_GATEWAY_WS_URL is not set");
@@ -88,11 +91,11 @@ export function AgentChat({ agentId }: Props) {
               if (last?.role === "assistant") {
                 return [
                   ...prev.slice(0, -1),
-                  { ...last, content: last.content + payload.delta },
+                  { ...last, content: last.content + (payload.delta ?? "") },
                 ];
               }
               const id = payload.messageId ?? `msg-${Date.now()}`;
-              return [...prev, { id, role: "assistant", content: payload.delta }];
+              return [...prev, { id, role: "assistant", content: payload.delta ?? "" }];
             });
           } else if (payload.type === "assistant_message" && payload.text) {
             setMessages((prev) => {
@@ -121,9 +124,10 @@ export function AgentChat({ agentId }: Props) {
       setStatus("error");
       setErrorMessage(err instanceof Error ? err.message : "Connection failed");
     }
-  }, []);
+  }, [isDemoPlaceholder]);
 
   useEffect(() => {
+    if (isDemoPlaceholder) return;
     connect();
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -132,7 +136,7 @@ export function AgentChat({ agentId }: Props) {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [connect]);
+  }, [connect, isDemoPlaceholder]);
 
   const sendMessage = useCallback(() => {
     const text = input.trim();
@@ -151,6 +155,17 @@ export function AgentChat({ agentId }: Props) {
     ]);
     setInput("");
   }, [input, agentId]);
+
+  if (isDemoPlaceholder) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center p-8 text-center">
+        <p className="text-gray-600 max-w-md">
+          Demo mode. Connect an OpenClaw gateway (<code className="text-sm bg-gray-100 px-1 rounded">OPENCLAW_GATEWAY_URL</code> and{" "}
+          <code className="text-sm bg-gray-100 px-1 rounded">NEXT_PUBLIC_GATEWAY_WS_URL</code>) to enable live chat.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">

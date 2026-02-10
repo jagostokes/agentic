@@ -6,28 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Platform to enable non-technical users to run safe, secure, and efficient personal AI agents (using Open Claw / Moltbot / Clawdbot architecture).
 
-Full-stack TypeScript application using Express backend with React frontend. Built with Vite for development and production bundling.
+Full-stack Next.js 15 (App Router) with TypeScript, Auth.js (NextAuth) for Google sign-in, and Supabase as the database (no Prisma).
 
 ## Development Commands
 
 ```bash
-# Development (runs server with HMR)
+# Development
 npm run dev
 
-# Client only (Vite dev server on port 5000)
-npm run dev:client
-
-# Production build (builds both client and server)
+# Production build and start
 npm run build
-
-# Start production server
 npm start
 
-# Type checking
-npm run check
-
-# Database schema push to PostgreSQL
-npm run db:push
+# Lint
+npm run lint
 ```
 
 ## Architecture
@@ -110,17 +102,19 @@ Production build (`npm run build`) via `script/build.ts`:
 
 ## Database
 
-- ORM: Drizzle with PostgreSQL
-- Schema: `shared/schema.ts`
-- Config: `drizzle.config.ts`
-- Requires `DATABASE_URL` environment variable
-- Push schema changes: `npm run db:push`
+- **Supabase** (PostgreSQL via `@supabase/supabase-js`). No Prisma.
+- Schema: SQL in `supabase/migrations/`. Run in Supabase SQL Editor or via `supabase db push`.
+- Server-side client: `lib/supabase.ts` (service role key; never expose to client).
+- Tables: `users`, `agents`, `agent_bindings`, `agent_binding_claims` (snake_case).
 
 ## Environment Variables
 
-- `NODE_ENV` - "development" or "production"
-- `PORT` - Server port (default: 5000)
-- `DATABASE_URL` - PostgreSQL connection string (required for Drizzle)
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role secret (server only)
+- `AUTH_SECRET` - Auth.js (required). `ALLOW_DEMO=true` - enable "Try demo" without Google; when set, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are optional.
+- `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN` - Gateway API
+- `NEXT_PUBLIC_GATEWAY_WS_URL` - Gateway WebSocket URL
+- `TELEGRAM_BOT_USERNAME` - Telegram bot for claim deep link
 
 ## Agent Platform Architecture
 
